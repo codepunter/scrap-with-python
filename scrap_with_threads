@@ -1,0 +1,60 @@
+import threading, urllib2
+import Queue
+import urllib
+import re
+import time
+symbolfile=open("symbols.txt")
+symbolslist=symbolfile.read()
+newsymbolslist=symbolslist.split("\n")
+i=0
+urls_to_load = []
+while i<len(newsymbolslist)-1:
+    urls_to_load.append("http://finance.yahoo.com/q?s="+newsymbolslist[i]+"&ql=1")
+    i+=1
+myfile = open('xyz.txt', 'w')
+
+def read_url(url, queue):
+    try:
+        data = urllib2.urlopen(url).read()
+        regex='<span class="time_rtq_ticker">(.+?)</span></span>'
+        pattern=re.compile(regex)
+        price=re.findall(pattern,data)
+        s=price[0]
+        print s.split(">",1)[1]
+        myfile.write("%s\n" % s.split(">",1)[1])
+        queue.put(data)
+    except:
+        myfile.write("%s\n" % url)
+        
+       
+    
+
+def fetch_parallel(urls):
+    result = Queue.Queue()
+    threads = [threading.Thread(target=read_url, args = (url,result)) for url in urls]
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+
+    return result
+
+
+def fetch_sequencial():
+    result = Queue.Queue()
+    for url in urls_to_load:
+        read_url(url,result)
+    return result
+
+
+a=len(urls_to_load)
+for i in range(0,a,100):
+    if i+100 < len(urls_to_load): 
+       fetch_parallel(urls_to_load[i:i+100])
+        
+    else:
+        fetch_parallel(urls_to_load[i:a])
+    
+myfile.close()
