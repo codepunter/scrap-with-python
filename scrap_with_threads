@@ -20,8 +20,13 @@ def read_url(url, queue):
         pattern=re.compile(regex)
         price=re.findall(pattern,data)
         s=price[0]
-        print s.split(">",1)[1]
-        myfile.write("%s\n" % s.split(">",1)[1])
+        #print s.split(">",1)[1]
+        regex1='<div class="title"><h2>(.+?)</h2>'
+        pattern1 =re.compile(regex1)
+        cname=re.findall(pattern1,data)
+        total=cname[0]+'-->'+s.split(">",1)[1]
+        print total
+        myfile.write("%s\n" % total)
         queue.put(data)
     except:
         myfile.write("%s\n" % url)
@@ -29,7 +34,7 @@ def read_url(url, queue):
        
     
 
-def fetch_parallel(urls):
+def fetch_parallel(urls):  #it takes 1.2 sec times less than fetch_sequencial to perform a task  
     result = Queue.Queue()
     threads = [threading.Thread(target=read_url, args = (url,result)) for url in urls]
     for t in threads:
@@ -42,15 +47,15 @@ def fetch_parallel(urls):
     return result
 
 
-def fetch_sequencial():
+def fetch_sequencial(urls):
     result = Queue.Queue()
-    for url in urls_to_load:
+    for url in urls:
         read_url(url,result)
     return result
 
 
 a=len(urls_to_load)
-for i in range(0,a,100):
+for i in range(0,a,100):# only 100 thread are assign to perform any task 
     if i+100 < len(urls_to_load): 
        fetch_parallel(urls_to_load[i:i+100])
         
